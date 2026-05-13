@@ -18,10 +18,6 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public AuthResponse register(RegisterRequest request) throws Exception {
-        if (userRepository.existsByName(request.getName())) {
-            throw new Exception("Username already exists");
-        }
-
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new Exception("Email already exists");
         }
@@ -33,14 +29,12 @@ public class UserService {
         user.setRole("USER");
 
         User savedUser = userRepository.save(user);
-
-        String token = jwtUtil.generateToken(savedUser.getName());
-
-        return new AuthResponse(token, savedUser.getName(), savedUser.getRole());
+        String token = jwtUtil.generateToken(savedUser.getEmail());
+        return new AuthResponse(savedUser.getId(), token, savedUser.getName(), savedUser.getRole());
     }
 
     public AuthResponse login(AuthRequest request) throws Exception {
-        Optional<User> userOpt = userRepository.findByName(request.getName());
+        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (!userOpt.isPresent()) {
             throw new Exception("User not found");
@@ -52,13 +46,11 @@ public class UserService {
             throw new Exception("Invalid password");
         }
 
-        String token = jwtUtil.generateToken(user.getName());
-
-        return new AuthResponse(token, user.getName(), user.getRole());
+        String token = jwtUtil.generateToken(user.getEmail());
+        return new AuthResponse(user.getId(), token, user.getName(), user.getRole());
     }
 
     public User getUserById(Long id) {
-        Optional<User> userOpt = userRepository.findById(id);
-        return userOpt.orElse(null);
+        return userRepository.findById(id).orElse(null);
     }
 }
